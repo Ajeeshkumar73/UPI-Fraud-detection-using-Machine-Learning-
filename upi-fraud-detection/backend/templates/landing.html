@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+
+{% block title %}UPIGuard | Enterprise UPI Fraud Prevention Platform{% endblock %}
+
+{% block content %}
+<div class="space-y-12 py-6">
+    <!-- Hero Section -->
+    <div class="text-center max-w-3xl mx-auto space-y-5">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
+            <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i> Next-Gen UPI Payment Security
+        </div>
+        <h1 class="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            Enterprise Real-Time UPI Transaction Security & Fraud Prevention
+        </h1>
+        <p class="text-slate-600 text-base md:text-lg font-normal leading-relaxed">
+            An enterprise-grade platform for evaluating digital payments, calculating dynamic transaction risk scores, and enforcing real-time fraud mitigation rules.
+        </p>
+        <div class="flex items-center justify-center gap-3 pt-2">
+            <a href="/send-money/" class="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors">
+                Test Transaction Simulation
+            </a>
+            <a href="/login/" class="px-5 py-2.5 text-sm font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-colors">
+                Access Portal
+            </a>
+        </div>
+    </div>
+
+    <!-- Live Risk Simulator Widget -->
+    <div id="simulator" class="bg-white p-6 md:p-8 rounded-xl max-w-4xl mx-auto border border-slate-200 shadow-sm scroll-mt-24">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 border-b border-slate-200 pb-4">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i> Real-Time Risk Analytics Engine
+                </h2>
+                <p class="text-xs text-slate-500">Evaluates 21 key transaction telemetry features against baseline risk models</p>
+            </div>
+            <span class="px-3 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-mono font-medium border border-blue-200">Random Forest Classifier Active</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Transaction Amount (INR)</label>
+                    <input type="number" id="demo-amount" value="85000" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Device Type</label>
+                        <select id="demo-device" onchange="toggleCustomInput(this, 'demo-device-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="Mobile">Mobile</option>
+                            <option value="Laptop" selected>Laptop</option>
+                            <option value="Desktop">Desktop</option>
+                            <option value="Tablet">Tablet</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="demo-device-custom" placeholder="Type custom device..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Location</label>
+                        <select id="demo-location" onchange="toggleCustomInput(this, 'demo-location-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Sydney (International)" selected>Sydney (International)</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Bangalore">Bangalore</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="demo-location-custom" placeholder="Type custom location..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Suspicious IP Flag</label>
+                        <select id="demo-ip" onchange="toggleCustomInput(this, 'demo-ip-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="0">0 (Normal IP)</option>
+                            <option value="1" selected>1 (Flagged Proxy/VPN)</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="demo-ip-custom" placeholder="Type 0 or 1..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Previous Flagged History</label>
+                        <select id="demo-prev-fraud" onchange="toggleCustomInput(this, 'demo-prev-fraud-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="0">0 (Clean Record)</option>
+                            <option value="1" selected>1 (Flagged History)</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="demo-prev-fraud-custom" placeholder="Type 0 or 1..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                </div>
+                <button id="demo-calc-btn" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2">
+                    <i data-lucide="play" class="w-4 h-4"></i> Run Risk Evaluation
+                </button>
+            </div>
+
+            <div id="demo-result-box" class="bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Risk Assessment Score</span>
+                        <span id="demo-risk-level" class="px-2.5 py-0.5 rounded-md text-xs font-semibold risk-badge-high">High Risk</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span id="demo-risk-score" class="text-4xl font-extrabold text-slate-900">96.4</span>
+                        <span class="text-slate-500 text-sm">/ 100 Risk Score</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                        <div id="demo-risk-bar" class="bg-rose-600 h-full rounded-full transition-all duration-300" style="width: 96.4%"></div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-xs font-semibold text-slate-700">Identified Risk Factors:</div>
+                        <ul id="demo-risk-factors" class="text-xs text-slate-600 space-y-1 pl-4 list-disc">
+                            <li>Previous Flagged Activity History</li>
+                            <li>Proxy / VPN IP Address Anomaly</li>
+                            <li>High Geolocation Distance Anomaly</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-slate-200 flex items-center justify-between text-xs">
+                    <span class="text-slate-500">System Recommendation:</span>
+                    <span id="demo-action" class="font-bold text-rose-600">BLOCKED</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Grid -->
+    <div id="features" class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 max-w-6xl mx-auto scroll-mt-24">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center">
+                <i data-lucide="shield" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Real-Time Risk Scoring</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+                Evaluates key payment attributes instantly on transaction initiation to produce accurate risk probabilities.
+            </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center">
+                <i data-lucide="key-round" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Automated Policy Enforcement</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+                Normal transactions proceed seamlessly. Medium-risk items require 6-digit OTP verification. High-risk transactions are blocked instantly.
+            </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center">
+                <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Administrative Workbench</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+                Comprehensive security operations portal featuring monitoring analytics, user management, and audit log telemetry.
+            </p>
+        </div>
+    </div>
+
+    <!-- About Section -->
+    <div id="about" class="bg-white p-8 md:p-10 rounded-2xl border border-slate-200 shadow-sm max-w-6xl mx-auto space-y-8 scroll-mt-24">
+        <div class="text-center max-w-2xl mx-auto space-y-3">
+            <span class="px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold uppercase tracking-wider">About UPIGuard</span>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">How UPIGuard Protects Digital UPI Transactions</h2>
+            <p class="text-slate-600 text-sm md:text-base leading-relaxed">
+                UPIGuard is an intelligent, real-time UPI Fraud Prevention Platform designed to evaluate digital payment transfers before settlement. Using machine learning anomaly detection and dynamic risk scoring rules, UPIGuard stops fraudulent transfers instantly.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+            <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">1</div>
+                <h4 class="font-bold text-slate-900 text-base">Instant Telemetry Evaluation</h4>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    When you initiate a UPI payment, UPIGuard analyzes transaction telemetry: payment amount, device footprint, IP proxy flags, location distance, and historical behavior.
+                </p>
+            </div>
+            <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">2</div>
+                <h4 class="font-bold text-slate-900 text-base">Dynamic Risk Scoring</h4>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Our ML model computes a 0-100 Risk Score. Safe transactions score low, suspicious activities trigger step-up 6-digit OTP verification, and extreme anomalies get blocked.
+                </p>
+            </div>
+            <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">3</div>
+                <h4 class="font-bold text-slate-900 text-base">Automated Security & Auditing</h4>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    High-risk events trigger instant security alerts, beneficiary validation checks, and log telemetry into an immutable audit trail for security administrators.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-16 pt-8 border-t border-slate-200 text-xs text-slate-500 max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8">
+            <div class="space-y-3 md:col-span-1">
+                <div class="flex items-center gap-2 font-bold text-base text-slate-900">
+                    <div class="w-7 h-7 rounded-md bg-blue-600 text-white flex items-center justify-center">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <span>UPI<span class="text-blue-600">Guard</span></span>
+                </div>
+                <p class="text-slate-500 leading-relaxed text-xs">
+                    Next-generation real-time UPI transaction monitoring and AI risk scoring system for enterprise digital payments.
+                </p>
+            </div>
+
+            <div>
+                <h5 class="font-bold text-slate-900 mb-3 text-xs uppercase tracking-wider">Navigation</h5>
+                <ul class="space-y-2">
+                    <li><a href="/" class="hover:text-blue-600 transition-colors">Home</a></li>
+                    <li><a href="#features" class="hover:text-blue-600 transition-colors">Features</a></li>
+                    <li><a href="#about" class="hover:text-blue-600 transition-colors">About UPIGuard</a></li>
+                    <li><a href="#simulator" class="hover:text-blue-600 transition-colors">Risk Simulator</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h5 class="font-bold text-slate-900 mb-3 text-xs uppercase tracking-wider">Portals & Actions</h5>
+                <ul class="space-y-2">
+                    <li><a href="/login/" class="hover:text-blue-600 transition-colors">User Sign In</a></li>
+                    <li><a href="/register/" class="hover:text-blue-600 transition-colors">Create Account</a></li>
+                    <li><a href="/admin/login/" class="hover:text-blue-600 transition-colors">Administrator Portal</a></li>
+                    <li><a href="/send-money/" class="hover:text-blue-600 transition-colors">Send Money (UPI)</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h5 class="font-bold text-slate-900 mb-3 text-xs uppercase tracking-wider">Security Protection</h5>
+                <p class="text-slate-500 leading-relaxed text-xs">
+                    Protected by Random Forest Risk Classifier (v1.0.0), automated PBKDF2 password hashing, and real-time audit telemetry.
+                </p>
+            </div>
+        </div>
+
+        <div class="pt-6 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 pb-8">
+            <div>&copy; 2026 UPIGuard Enterprise Security Platform. All rights reserved.</div>
+            <div class="flex items-center gap-4">
+                <span class="inline-flex items-center gap-1.5 text-emerald-700 font-medium bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 text-[11px]">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Risk Engine Online
+                </span>
+            </div>
+        </div>
+    </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleCustomInput(selectEl, customInputId) {
+    const customInput = document.getElementById(customInputId);
+    if (!customInput) return;
+    if (selectEl.value === 'CUSTOM') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+    } else {
+        customInput.classList.add('hidden');
+        customInput.value = '';
+    }
+}
+
+function getFieldValue(selectId, customInputId) {
+    const selectEl = document.getElementById(selectId);
+    const customEl = document.getElementById(customInputId);
+    if (selectEl && selectEl.value === 'CUSTOM' && customEl && customEl.value.trim() !== '') {
+        return customEl.value.trim();
+    }
+    return selectEl ? selectEl.value : '';
+}
+
+document.getElementById('demo-calc-btn')?.addEventListener('click', async () => {
+    const amount = parseFloat(document.getElementById('demo-amount').value || '1000');
+    const device = getFieldValue('demo-device', 'demo-device-custom');
+    const location = getFieldValue('demo-location', 'demo-location-custom');
+    const rawIp = getFieldValue('demo-ip', 'demo-ip-custom');
+    const rawPrev = getFieldValue('demo-prev-fraud', 'demo-prev-fraud-custom');
+    const ipFlag = (rawIp.includes('1') || rawIp.toLowerCase().includes('flagged') || rawIp.toLowerCase().includes('proxy') || rawIp.toLowerCase().includes('vpn')) ? 1 : 0;
+    const prevFraud = (rawPrev.includes('1') || rawPrev.toLowerCase().includes('flagged') || rawPrev.toLowerCase().includes('history')) ? 1 : 0;
+
+    try {
+        const res = await apiCall('/fraud/predict/', 'POST', {
+            transaction_amount: amount,
+            device_type: device,
+            location: location,
+            ip_address_flag: ipFlag,
+            previous_fraudulent_activity: prevFraud,
+            avg_transaction_amount_7d: 500,
+            daily_transaction_count: 5,
+            failed_transaction_count_7d: prevFraud === 1 ? 3 : 0,
+            transaction_distance: location.toLowerCase().includes('sydney') || location.toLowerCase().includes('international') ? 850 : 10
+        });
+
+        document.getElementById('demo-risk-score').textContent = res.risk_score;
+        const levelEl = document.getElementById('demo-risk-level');
+        const actionEl = document.getElementById('demo-action');
+        const barEl = document.getElementById('demo-risk-bar');
+        const factorsEl = document.getElementById('demo-risk-factors');
+
+        levelEl.textContent = `${res.risk_level} Risk`;
+        actionEl.textContent = res.recommended_action;
+        barEl.style.width = `${Math.min(100, res.risk_score)}%`;
+
+        if (res.risk_level === 'Low') {
+            levelEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-semibold risk-badge-low';
+            actionEl.className = 'font-bold text-emerald-600';
+            barEl.className = 'bg-emerald-600 h-full rounded-full transition-all duration-300';
+        } else if (res.risk_level === 'Medium') {
+            levelEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-semibold risk-badge-medium';
+            actionEl.className = 'font-bold text-amber-600';
+            barEl.className = 'bg-amber-600 h-full rounded-full transition-all duration-300';
+        } else {
+            levelEl.className = 'px-2.5 py-0.5 rounded-md text-xs font-semibold risk-badge-high';
+            actionEl.className = 'font-bold text-rose-600';
+            barEl.className = 'bg-rose-600 h-full rounded-full transition-all duration-300';
+        }
+
+        factorsEl.innerHTML = res.risk_factors.map(f => `<li>${f}</li>`).join('');
+        showToast('Risk Evaluation completed', 'success');
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+});
+</script>
+{% endblock %}

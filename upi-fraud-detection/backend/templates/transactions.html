@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Transactions | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Transaction Monitoring</h1>
+            <p class="text-slate-500 text-xs mt-0.5">Filter and inspect simulated UPI transactions and risk evaluation outcomes.</p>
+        </div>
+        <a href="/send-money/" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm flex items-center gap-2 self-start">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Transaction
+        </a>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div class="lg:col-span-2">
+            <input type="text" id="tx-filter-search" placeholder="Search Transaction ID, UPI ID, Location..." class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-xs text-slate-900 focus:border-blue-600 focus:outline-none">
+        </div>
+        <div>
+            <select id="tx-filter-risk" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-blue-600 focus:outline-none">
+                <option value="">All Risk Levels</option>
+                <option value="Low">Low Risk (0-29)</option>
+                <option value="Medium">Medium Risk (30-64)</option>
+                <option value="High">High Risk (65-100)</option>
+            </select>
+        </div>
+        <div>
+            <select id="tx-filter-status" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:border-blue-600 focus:outline-none">
+                <option value="">All Statuses</option>
+                <option value="APPROVED">APPROVED</option>
+                <option value="APPROVED_AFTER_OTP">APPROVED_AFTER_OTP</option>
+                <option value="OTP_REQUIRED">OTP_REQUIRED</option>
+                <option value="BLOCKED">BLOCKED</option>
+            </select>
+        </div>
+        <div>
+            <button id="tx-filter-btn" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5">
+                <i data-lucide="filter" class="w-3.5 h-3.5"></i> Apply Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-700">
+                <thead class="text-xs uppercase bg-slate-50 text-slate-600 border-b border-slate-200">
+                    <tr>
+                        <th class="py-3 px-4">Transaction ID</th>
+                        <th class="py-3 px-4">Timestamp</th>
+                        <th class="py-3 px-4">Beneficiary</th>
+                        <th class="py-3 px-4">Amount</th>
+                        <th class="py-3 px-4">Type</th>
+                        <th class="py-3 px-4">Risk Score</th>
+                        <th class="py-3 px-4">Status</th>
+                        <th class="py-3 px-4 text-right">Details</th>
+                    </tr>
+                </thead>
+                <tbody id="transactions-list-body">
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-slate-500">Loading transactions...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-slate-200 text-xs text-slate-500">
+            <div id="tx-page-info">Showing records</div>
+            <div class="flex items-center gap-2">
+                <button id="tx-prev-btn" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 disabled:opacity-50 font-medium">Previous</button>
+                <button id="tx-next-btn" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 disabled:opacity-50 font-medium">Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+
+async function loadTransactions(page = 1) {
+    const search = document.getElementById('tx-filter-search')?.value || '';
+    const risk = document.getElementById('tx-filter-risk')?.value || '';
+    const statusVal = document.getElementById('tx-filter-status')?.value || '';
+
+    let query = `?page=${page}`;
+    if (search) query += `&search=${encodeURIComponent(search)}`;
+    if (risk) query += `&risk_level=${encodeURIComponent(risk)}`;
+    if (statusVal) query += `&status=${encodeURIComponent(statusVal)}`;
+
+    try {
+        const res = await apiCall(`/transactions/${query}`);
+        const txns = res.results || res;
+
+        const tbody = document.getElementById('transactions-list-body');
+        const pageInfo = document.getElementById('tx-page-info');
+
+        if (pageInfo) {
+            const count = res.count || txns.length;
+            pageInfo.textContent = `Showing page ${page} (${count} total transaction records)`;
+        }
+
+        if (tbody) {
+            if (txns.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500">No matching transaction records found.</td></tr>`;
+            } else {
+                tbody.innerHTML = txns.map(t => {
+                    const score = t.fraud_detection?.risk_score ?? 0;
+                    const level = t.fraud_detection?.risk_level || 'Low';
+                    let badgeClass = 'risk-badge-low';
+                    if (level === 'Medium') badgeClass = 'risk-badge-medium';
+                    if (level === 'High') badgeClass = 'risk-badge-high';
+
+                    const dateStr = t.timestamp ? new Date(t.timestamp).toLocaleString() : 'Just Now';
+
+                    return `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td class="py-3 px-4 font-mono text-xs font-semibold text-blue-600">${t.transaction_id}</td>
+                            <td class="py-3 px-4 text-xs text-slate-500">${dateStr}</td>
+                            <td class="py-3 px-4 font-medium text-slate-800">${t.beneficiary_name} <div class="text-[11px] text-slate-500">${t.upi_id}</div></td>
+                            <td class="py-3 px-4 font-bold text-slate-900">INR ${parseFloat(t.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            <td class="py-3 px-4 text-xs text-slate-600">${t.transaction_type}</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold ${badgeClass}">${score}/100</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="text-xs font-semibold ${t.status === 'BLOCKED' ? 'text-rose-600' : (t.status.includes('OTP') ? 'text-amber-600' : 'text-emerald-600')}">${t.status}</span>
+                            </td>
+                            <td class="py-3 px-4 text-right">
+                                <a href="/transactions/${t.id}/" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 text-xs font-medium text-slate-700 rounded-md transition-colors inline-flex items-center gap-1">
+                                    View Analysis
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+document.getElementById('tx-filter-btn')?.addEventListener('click', () => loadTransactions(1));
+document.getElementById('tx-prev-btn')?.addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        loadTransactions(currentPage);
+    }
+});
+document.getElementById('tx-next-btn')?.addEventListener('click', () => {
+    currentPage++;
+    loadTransactions(currentPage);
+});
+
+loadTransactions(1);
+</script>
+{% endblock %}

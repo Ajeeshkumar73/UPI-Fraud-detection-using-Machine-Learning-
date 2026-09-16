@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}System Analytics | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">System Analytics & Visual Breakdown</h1>
+        <p class="text-slate-500 text-xs mt-0.5">Visual charts categorizing financial transactions and risk indicators across key dimensions.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Device Breakdown -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+                <span>Fraud Distribution by Device Type</span>
+                <i data-lucide="smartphone" class="w-4 h-4 text-blue-600"></i>
+            </h3>
+            <div class="relative h-64">
+                <canvas id="chartByDevice"></canvas>
+            </div>
+        </div>
+
+        <!-- Merchant Breakdown -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+                <span>Fraud Distribution by Merchant Category</span>
+                <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-600"></i>
+            </h3>
+            <div class="relative h-64">
+                <canvas id="chartByMerchant"></canvas>
+            </div>
+        </div>
+
+        <!-- Auth Method Breakdown -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+                <span>Fraud Distribution by Authentication Method</span>
+                <i data-lucide="key" class="w-4 h-4 text-amber-600"></i>
+            </h3>
+            <div class="relative h-64 flex items-center justify-center">
+                <canvas id="chartByAuth"></canvas>
+            </div>
+        </div>
+
+        <!-- Location Breakdown -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+                <span>Fraud Distribution by Geographic Location</span>
+                <i data-lucide="map-pin" class="w-4 h-4 text-rose-600"></i>
+            </h3>
+            <div class="relative h-64">
+                <canvas id="chartByLocation"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadAnalytics() {
+    try {
+        const data = await apiCall('/admin/analytics/');
+
+        const devCtx = document.getElementById('chartByDevice')?.getContext('2d');
+        if (devCtx) {
+            new Chart(devCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.by_device.map(d => d.device_type),
+                    datasets: [{
+                        label: 'Total Transactions',
+                        data: data.by_device.map(d => d.total),
+                        backgroundColor: '#2563eb'
+                    }, {
+                        label: 'Fraud Count',
+                        data: data.by_device.map(d => d.fraud_count),
+                        backgroundColor: '#dc2626'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } },
+                        y: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } }
+                    },
+                    plugins: { legend: { labels: { color: '#334155' } } }
+                }
+            });
+        }
+
+        const merCtx = document.getElementById('chartByMerchant')?.getContext('2d');
+        if (merCtx) {
+            new Chart(merCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.by_merchant.map(m => m.merchant_category),
+                    datasets: [{
+                        label: 'Fraud Count',
+                        data: data.by_merchant.map(m => m.fraud_count),
+                        backgroundColor: '#16a34a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } },
+                        y: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } }
+                    },
+                    plugins: { legend: { labels: { color: '#334155' } } }
+                }
+            });
+        }
+
+        const authCtx = document.getElementById('chartByAuth')?.getContext('2d');
+        if (authCtx) {
+            new Chart(authCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.by_auth.map(a => a.authentication_method),
+                    datasets: [{
+                        data: data.by_auth.map(a => a.total),
+                        backgroundColor: ['#2563eb', '#16a34a', '#d97706', '#dc2626'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#334155' } } }
+                }
+            });
+        }
+
+        const locCtx = document.getElementById('chartByLocation')?.getContext('2d');
+        if (locCtx) {
+            new Chart(locCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.by_location.map(l => l.location),
+                    datasets: [{
+                        label: 'Total Txns',
+                        data: data.by_location.map(l => l.total),
+                        backgroundColor: '#d97706'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } },
+                        y: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } }
+                    },
+                    plugins: { legend: { labels: { color: '#334155' } } }
+                }
+            });
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+loadAnalytics();
+</script>
+{% endblock %}
