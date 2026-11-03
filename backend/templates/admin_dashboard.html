@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold uppercase tracking-wider mb-1">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-700"></i> Security Control Center
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Executive Admin Dashboard</h1>
+            <p class="text-slate-500 text-xs mt-0.5">System-wide monitoring of transactions, risk engine metrics, and fraud alerts.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="/admin/ml-model/" class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 transition-colors flex items-center gap-2">
+                <i data-lucide="cpu" class="w-4 h-4 text-blue-600"></i> Risk Analytics Engine
+            </a>
+            <a href="/admin/investigations/" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm flex items-center gap-2">
+                <i data-lucide="search" class="w-4 h-4"></i> Investigations Workbench
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total System Users</div>
+            <div class="text-2xl font-bold text-slate-900" id="adm-users-cnt">...</div>
+            <div class="text-[11px] text-slate-500">Registered platform accounts</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-blue-700">Total Transactions</div>
+            <div class="text-2xl font-bold text-blue-700" id="adm-tx-cnt">...</div>
+            <div class="text-[11px] text-slate-500">Processed through backend</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-rose-700">Fraud Rate</div>
+            <div class="text-2xl font-bold text-rose-700" id="adm-fraud-rate">...</div>
+            <div class="text-[11px] text-slate-500">High risk predictions ratio</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-emerald-700">Total Volume</div>
+            <div class="text-xl font-bold text-emerald-700" id="adm-total-val">...</div>
+            <div class="text-[11px] text-slate-500">Combined payment value</div>
+        </div>
+    </div>
+
+    <!-- Breakdown Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+                <span>Risk Classification</span>
+                <i data-lucide="shield" class="w-4 h-4 text-blue-600"></i>
+            </h3>
+            <div class="space-y-2.5 text-sm">
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <span class="text-emerald-700 font-medium text-xs">Low Risk (0-29)</span>
+                    <span class="font-bold text-slate-900" id="adm-low-cnt">...</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <span class="text-amber-700 font-medium text-xs">Medium Risk (30-64)</span>
+                    <span class="font-bold text-slate-900" id="adm-med-cnt">...</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <span class="text-rose-700 font-medium text-xs">High Risk (65-100)</span>
+                    <span class="font-bold text-slate-900" id="adm-high-cnt">...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4 md:col-span-2">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+                <span>Risk Engine Performance Metrics</span>
+                <a href="/admin/ml-model/" class="text-xs text-blue-600 hover:underline">Full Dashboard &rarr;</a>
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="adm-model-stats">
+                <div class="p-3.5 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                    <div class="text-xs text-slate-500 font-medium">Accuracy</div>
+                    <div class="text-lg font-bold text-slate-900 mt-0.5" id="m-acc">1.00</div>
+                </div>
+                <div class="p-3.5 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                    <div class="text-xs text-slate-500 font-medium">Precision</div>
+                    <div class="text-lg font-bold text-slate-900 mt-0.5" id="m-prec">1.00</div>
+                </div>
+                <div class="p-3.5 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                    <div class="text-xs text-slate-500 font-medium">Recall</div>
+                    <div class="text-lg font-bold text-slate-900 mt-0.5" id="m-rec">1.00</div>
+                </div>
+                <div class="p-3.5 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                    <div class="text-xs text-slate-500 font-medium">F1-Score</div>
+                    <div class="text-lg font-bold text-blue-600 mt-0.5" id="m-f1">1.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadAdminDashboard() {
+    try {
+        const stats = await apiCall('/admin/dashboard/');
+        document.getElementById('adm-users-cnt').textContent = stats.total_users;
+        document.getElementById('adm-tx-cnt').textContent = stats.total_transactions;
+        document.getElementById('adm-fraud-rate').textContent = `${stats.fraud_rate}%`;
+        document.getElementById('adm-total-val').textContent = `INR ${stats.total_transaction_value.toLocaleString('en-IN')}`;
+
+        document.getElementById('adm-low-cnt').textContent = stats.low_risk_transactions;
+        document.getElementById('adm-med-cnt').textContent = stats.medium_risk_transactions;
+        document.getElementById('adm-high-cnt').textContent = stats.high_risk_transactions;
+
+        const mlMeta = await apiCall('/admin/model-performance/');
+        if (mlMeta && mlMeta.model_comparison) {
+            const bestName = mlMeta.selected_model;
+            const metrics = mlMeta.model_comparison[bestName] || {};
+            document.getElementById('m-acc').textContent = metrics.accuracy || '1.00';
+            document.getElementById('m-prec').textContent = metrics.precision || '1.00';
+            document.getElementById('m-rec').textContent = metrics.recall || '1.00';
+            document.getElementById('m-f1').textContent = metrics.f1 || '1.00';
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+loadAdminDashboard();
+</script>
+{% endblock %}

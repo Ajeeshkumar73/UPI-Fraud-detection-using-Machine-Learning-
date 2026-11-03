@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Account | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-10">
+    <div class="bg-white p-8 rounded-xl border border-slate-200 space-y-6 shadow-sm">
+        <div class="text-center space-y-2">
+            <div class="w-11 h-11 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 mx-auto flex items-center justify-center">
+                <i data-lucide="user-plus" class="w-5 h-5"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-900">Create Account</h2>
+            <p class="text-xs text-slate-500">Register to test simulated UPI transactions & risk detection</p>
+        </div>
+
+        <form id="register-form" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
+                <input type="text" id="reg-fullname" required class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none" placeholder="e.g. John Doe">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Username</label>
+                <input type="text" id="reg-username" required class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none" placeholder="e.g. johndoe">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
+                <input type="email" id="reg-email" required class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none" placeholder="name@domain.com">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Phone Number</label>
+                <input type="tel" id="reg-phone" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none" placeholder="+91 9876543210">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Password</label>
+                <div class="relative">
+                    <input type="password" id="reg-password" required minlength="6" class="w-full bg-white border border-slate-300 rounded-lg pl-3.5 pr-10 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none" placeholder="••••••••">
+                    <button type="button" id="toggle-reg-password" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors" title="Toggle password visibility">
+                        <i data-lucide="eye" id="eye-icon" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg transition-colors shadow-sm">
+                Create Account
+            </button>
+        </form>
+
+        <div class="text-center text-xs text-slate-500 pt-3 border-t border-slate-200">
+            Already have an account? <a href="/login/" class="text-blue-600 hover:underline font-medium">Sign In</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const toggleBtn = document.getElementById('toggle-reg-password');
+const pwdInput = document.getElementById('reg-password');
+
+toggleBtn?.addEventListener('click', () => {
+    const isPassword = pwdInput.type === 'password';
+    pwdInput.type = isPassword ? 'text' : 'password';
+    toggleBtn.innerHTML = `<i data-lucide="${isPassword ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+    if (window.lucide) window.lucide.createIcons();
+});
+
+document.getElementById('register-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userData = {
+        full_name: document.getElementById('reg-fullname').value,
+        username: document.getElementById('reg-username').value,
+        email: document.getElementById('reg-email').value,
+        phone_number: document.getElementById('reg-phone').value,
+        password: document.getElementById('reg-password').value,
+        role: 'USER'
+    };
+
+    try {
+        await apiCall('/auth/register/', 'POST', userData);
+        showToast('Registration successful! Please login.', 'success');
+        window.location.href = '/login/';
+    } catch (err) {
+        showToast(err.message || 'Registration failed', 'error');
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}User Dashboard | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Account Dashboard</h1>
+            <p class="text-slate-500 text-xs mt-0.5">Monitor simulated UPI transactions, risk indicators, and protection logs.</p>
+        </div>
+        <a href="/send-money/" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm flex items-center gap-2 self-start">
+            <i data-lucide="send" class="w-4 h-4"></i> New UPI Transaction
+        </a>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Transactions</div>
+            <div class="text-2xl font-bold text-slate-900" id="stat-total-cnt">...</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-emerald-700">Approved</div>
+            <div class="text-2xl font-bold text-emerald-700" id="stat-approved-cnt">...</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-amber-700">OTP Verified</div>
+            <div class="text-2xl font-bold text-amber-700" id="stat-otp-cnt">...</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-rose-700">Blocked Fraud</div>
+            <div class="text-2xl font-bold text-rose-700" id="stat-blocked-cnt">...</div>
+        </div>
+    </div>
+
+    <!-- Charts & Summary Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4 md:col-span-1">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+                <span>Risk Level Breakdown</span>
+                <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i>
+            </h3>
+            <div class="relative h-52 flex items-center justify-center">
+                <canvas id="userRiskChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4 md:col-span-2 flex flex-col justify-between">
+            <div>
+                <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between mb-4">
+                    <span>Account Security Metrics</span>
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-xs text-slate-500 font-medium">Total Volume Transacted</div>
+                        <div class="text-lg font-bold text-slate-900 mt-1" id="stat-total-val">INR 0.00</div>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-xs text-slate-500 font-medium">Average Transaction Size</div>
+                        <div class="text-lg font-bold text-slate-900 mt-1" id="stat-avg-val">INR 0.00</div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-3.5 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center gap-3 mt-4">
+                <i data-lucide="info" class="w-4 h-4 shrink-0 text-blue-600"></i>
+                <span>Fraud protection engine active. All digital payments are evaluated in real-time.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions Table -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="clock" class="w-4 h-4 text-blue-600"></i> Recent Activity Log
+            </h3>
+            <a href="/transactions/" class="text-xs text-blue-600 hover:underline font-semibold">View All Transactions &rarr;</a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-700">
+                <thead class="text-xs uppercase bg-slate-50 text-slate-600 border-b border-slate-200">
+                    <tr>
+                        <th class="py-3 px-4">Transaction ID</th>
+                        <th class="py-3 px-4">Beneficiary</th>
+                        <th class="py-3 px-4">Amount</th>
+                        <th class="py-3 px-4">Risk Score</th>
+                        <th class="py-3 px-4">Status</th>
+                        <th class="py-3 px-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-recent-txns-body">
+                    <tr>
+                        <td colspan="6" class="py-6 text-center text-slate-500">Loading transaction records...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDashboardData() {
+    try {
+        const res = await apiCall('/transactions/');
+        const txns = res.results || res;
+
+        const totalCnt = txns.length;
+        const approvedCnt = txns.filter(t => t.status === 'APPROVED').length;
+        const otpCnt = txns.filter(t => t.status === 'APPROVED_AFTER_OTP' || t.status === 'OTP_REQUIRED').length;
+        const blockedCnt = txns.filter(t => t.status === 'BLOCKED').length;
+
+        const totalVal = txns.reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+        const avgVal = totalCnt > 0 ? totalVal / totalCnt : 0;
+
+        document.getElementById('stat-total-cnt').textContent = totalCnt;
+        document.getElementById('stat-approved-cnt').textContent = approvedCnt;
+        document.getElementById('stat-otp-cnt').textContent = otpCnt;
+        document.getElementById('stat-blocked-cnt').textContent = blockedCnt;
+        document.getElementById('stat-total-val').textContent = `INR ${totalVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        document.getElementById('stat-avg-val').textContent = `INR ${avgVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+        let lowCnt = 0, medCnt = 0, highCnt = 0;
+        txns.forEach(t => {
+            const level = t.fraud_detection?.risk_level || 'Low';
+            if (level === 'Low') lowCnt++;
+            else if (level === 'Medium') medCnt++;
+            else if (level === 'High') highCnt++;
+        });
+
+        const ctx = document.getElementById('userRiskChart')?.getContext('2d');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                    datasets: [{
+                        data: [lowCnt || 1, medCnt, highCnt],
+                        backgroundColor: ['#16a34a', '#d97706', '#dc2626'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#475569', font: { size: 11 } } } }
+                }
+            });
+        }
+
+        const tbody = document.getElementById('user-recent-txns-body');
+        if (tbody) {
+            if (txns.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-500">No transactions recorded yet. <a href="/send-money/" class="text-blue-600 underline font-medium">Send money now</a></td></tr>`;
+            } else {
+                tbody.innerHTML = txns.slice(0, 5).map(t => {
+                    const score = t.fraud_detection?.risk_score ?? 0;
+                    const level = t.fraud_detection?.risk_level || 'Low';
+                    let badgeClass = 'risk-badge-low';
+                    if (level === 'Medium') badgeClass = 'risk-badge-medium';
+                    if (level === 'High') badgeClass = 'risk-badge-high';
+
+                    return `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td class="py-3 px-4 font-mono text-xs font-semibold text-blue-600">${t.transaction_id}</td>
+                            <td class="py-3 px-4 font-medium text-slate-800">${t.beneficiary_name} <span class="text-xs text-slate-500">(${t.upi_id})</span></td>
+                            <td class="py-3 px-4 font-bold text-slate-900">INR ${parseFloat(t.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold ${badgeClass}">${score}/100 (${level})</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="text-xs font-semibold ${t.status === 'BLOCKED' ? 'text-rose-600' : (t.status.includes('OTP') ? 'text-amber-600' : 'text-emerald-600')}">${t.status}</span>
+                            </td>
+                            <td class="py-3 px-4 text-right">
+                                <a href="/transactions/${t.id}/" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 text-xs font-medium text-slate-700 rounded-md transition-colors">Details</a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+loadDashboardData();
+</script>
+{% endblock %}

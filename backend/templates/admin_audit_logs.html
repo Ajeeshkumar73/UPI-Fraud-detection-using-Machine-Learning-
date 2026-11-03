@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Security Audit Logs | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Security Audit Logs</h1>
+        <p class="text-slate-500 text-xs mt-0.5">System-wide immutable log of user authentication, transaction decisions, and administrative actions.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-700">
+                <thead class="text-xs uppercase bg-slate-50 text-slate-600 border-b border-slate-200">
+                    <tr>
+                        <th class="py-3 px-4">Log ID</th>
+                        <th class="py-3 px-4">Timestamp</th>
+                        <th class="py-3 px-4">User Account</th>
+                        <th class="py-3 px-4">Action Type</th>
+                        <th class="py-3 px-4">Description</th>
+                    </tr>
+                </thead>
+                <tbody id="audit-logs-body">
+                    <tr>
+                        <td colspan="5" class="py-6 text-center text-slate-500">Loading audit logs...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadAuditLogs() {
+    try {
+        const res = await apiCall('/admin/audit-logs/');
+        const list = res.results || res;
+        const tbody = document.getElementById('audit-logs-body');
+
+        if (tbody) {
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">No audit logs available.</td></tr>`;
+            } else {
+                tbody.innerHTML = list.map(l => {
+                    const actionName = l.action || l.action_type || 'SYSTEM_ACTION';
+                    const descName = l.description || l.details || '-';
+                    let actionClass = 'text-slate-700';
+
+                    if (actionName.includes('LOGIN')) actionClass = 'text-blue-600 font-semibold';
+                    else if (actionName.includes('BLOCKED')) actionClass = 'text-rose-600 font-semibold';
+                    else if (actionName.includes('OTP')) actionClass = 'text-amber-600 font-semibold';
+                    else if (actionName.includes('REGISTER')) actionClass = 'text-emerald-600 font-semibold';
+                    else if (actionName.includes('RESET')) actionClass = 'text-purple-600 font-semibold';
+
+                    return `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td class="py-3 px-4 font-mono text-xs text-slate-500">#LOG-${l.id}</td>
+                            <td class="py-3 px-4 text-xs text-slate-500">${new Date(l.timestamp).toLocaleString()}</td>
+                            <td class="py-3 px-4 font-semibold text-slate-900">@${l.username || 'System'}</td>
+                            <td class="py-3 px-4 font-mono text-xs ${actionClass}">${actionName}</td>
+                            <td class="py-3 px-4 text-slate-700 text-xs">${descName}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+loadAuditLogs();
+</script>
+{% endblock %}

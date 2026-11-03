@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Fraud Investigations | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Fraud Investigation Workbench</h1>
+        <p class="text-slate-500 text-xs mt-0.5">Review flagged high-risk transactions, inspect risk indicators, and record administrator verdicts.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-700">
+                <thead class="text-xs uppercase bg-slate-50 text-slate-600 border-b border-slate-200">
+                    <tr>
+                        <th class="py-3 px-4">Txn ID</th>
+                        <th class="py-3 px-4">Amount</th>
+                        <th class="py-3 px-4">Prediction</th>
+                        <th class="py-3 px-4">Risk Score</th>
+                        <th class="py-3 px-4">Investigation Status</th>
+                        <th class="py-3 px-4">Last Updated</th>
+                        <th class="py-3 px-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="investigations-list-body">
+                    <tr>
+                        <td colspan="7" class="py-6 text-center text-slate-500">Loading flagged transactions for investigation...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadInvestigations() {
+    try {
+        const txnsRes = await apiCall('/transactions/?risk_level=High');
+        const txns = txnsRes.results || txnsRes;
+
+        const invRes = await apiCall('/admin/investigations/');
+        const invList = invRes.results || invRes;
+
+        const invMap = {};
+        invList.forEach(i => {
+            invMap[i.transaction_id] = i;
+        });
+
+        const tbody = document.getElementById('investigations-list-body');
+        if (tbody) {
+            if (txns.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">No high-risk transactions requiring investigation at present.</td></tr>`;
+            } else {
+                tbody.innerHTML = txns.map(t => {
+                    const inv = invMap[t.transaction_id] || {};
+                    const statusVal = inv.investigation_status || 'Pending Review';
+                    const score = t.fraud_detection?.risk_score ?? 0;
+                    const pred = t.fraud_detection?.prediction_result || 'Fraud';
+
+                    return `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td class="py-3 px-4 font-mono text-xs font-semibold text-blue-600">${t.transaction_id}</td>
+                            <td class="py-3 px-4 font-bold text-slate-900">INR ${parseFloat(t.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold ${pred === 'Fraud' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}">${pred}</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold risk-badge-high">${score}/100</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="text-xs font-semibold ${statusVal === 'Confirmed Fraud' ? 'text-rose-600' : (statusVal === 'Marked Genuine' ? 'text-emerald-600' : 'text-amber-600')}">${statusVal}</span>
+                            </td>
+                            <td class="py-3 px-4 text-xs text-slate-500">${inv.investigation_date ? new Date(inv.investigation_date).toLocaleDateString() : 'N/A'}</td>
+                            <td class="py-3 px-4 text-right">
+                                <button class="open-investigate-btn px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-medium rounded-md transition-colors" data-txid="${t.transaction_id}" data-id="${t.id}">
+                                    Review Case
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.querySelectorAll('.open-investigate-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const txid = btn.dataset.txid;
+                        const currentInv = invMap[txid] || {};
+
+                        showModal({
+                            title: `Investigate Case: ${txid}`,
+                            bodyHTML: `
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1">Set Investigation Verdict</label>
+                                        <select id="inv-status-select" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none">
+                                            <option value="Under Investigation" ${currentInv.investigation_status === 'Under Investigation' ? 'selected' : ''}>Under Investigation</option>
+                                            <option value="Marked Genuine" ${currentInv.investigation_status === 'Marked Genuine' ? 'selected' : ''}>Mark Genuine (False Positive)</option>
+                                            <option value="Confirmed Fraud" ${currentInv.investigation_status === 'Confirmed Fraud' ? 'selected' : ''}>Confirm Fraud (Confirmed Threat)</option>
+                                            <option value="Resolved" ${currentInv.investigation_status === 'Resolved' ? 'selected' : ''}>Resolve & Close Case</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1">Investigation Remarks</label>
+                                        <textarea id="inv-remarks-input" rows="3" class="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm text-slate-900 focus:border-blue-600 focus:outline-none placeholder-slate-400" placeholder="Enter auditor remarks and rationale...">${currentInv.remarks || ''}</textarea>
+                                    </div>
+                                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-500">
+                                        Notice: Administrator investigation labels are saved separately as feedback logs.
+                                    </div>
+                                </div>
+                            `,
+                            primaryText: 'Save Verdict',
+                            onPrimary: async () => {
+                                const statusVal = document.getElementById('inv-status-select').value;
+                                const remarksVal = document.getElementById('inv-remarks-input').value;
+
+                                try {
+                                    await apiCall('/admin/investigations/', 'POST', {
+                                        transaction_id: txid,
+                                        investigation_status: statusVal,
+                                        remarks: remarksVal
+                                    });
+                                    showToast(`Investigation updated for ${txid}`, 'success');
+                                    loadInvestigations();
+                                    return true;
+                                } catch (e) {
+                                    showToast(e.message, 'error');
+                                    return false;
+                                }
+                            }
+                        });
+                    });
+                });
+            }
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+loadInvestigations();
+</script>
+{% endblock %}
