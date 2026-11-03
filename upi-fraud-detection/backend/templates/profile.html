@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Settings | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Account Profile & Settings</h1>
+        <p class="text-slate-500 text-xs mt-0.5">Manage user credentials and security preferences.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div class="flex items-center gap-4 border-b border-slate-200 pb-6">
+            <div id="profile-avatar" class="w-14 h-14 rounded-full bg-blue-100 text-blue-700 border border-blue-200 text-xl font-bold flex items-center justify-center shrink-0">
+                {% if request.user.is_authenticated %}{% if request.user.full_name %}{{ request.user.full_name|slice:":1"|upper }}{% else %}{{ request.user.username|slice:":1"|upper }}{% endif %}{% else %}U{% endif %}
+            </div>
+            <div>
+                <h2 id="profile-full-name" class="text-lg font-bold text-slate-900">
+                    {% if request.user.is_authenticated %}{{ request.user.full_name|default:request.user.username }}{% else %}Guest User{% endif %}
+                </h2>
+                <p id="profile-username" class="text-xs text-blue-600 font-mono">
+                    {% if request.user.is_authenticated %}@{{ request.user.username }}{% else %}@guest{% endif %}
+                </p>
+                <div class="mt-1 flex items-center gap-2">
+                    <span id="profile-role-badge" class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        {% if request.user.is_authenticated %}{% if request.user.role == 'ADMIN' %}Administrator{% else %}Active Account{% endif %}{% else %}Active Account{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Full Name</label>
+                <div id="profile-display-fullname" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-sm text-slate-800 font-medium">
+                    {% if request.user.is_authenticated %}{{ request.user.full_name|default:"Not specified" }}{% else %}Not specified{% endif %}
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Username</label>
+                <div id="profile-display-username" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-sm text-slate-800 font-mono">
+                    {% if request.user.is_authenticated %}{{ request.user.username }}{% else %}guest{% endif %}
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Email Address</label>
+                <div id="profile-email" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-sm text-slate-800">
+                    {% if request.user.is_authenticated %}{{ request.user.email|default:"Not specified" }}{% else %}Not specified{% endif %}
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Phone Number</label>
+                <div id="profile-phone" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-sm text-slate-800">
+                    {% if request.user.is_authenticated %}{{ request.user.phone_number|default:"Not specified" }}{% else %}Not specified{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1 text-xs">
+            <div class="font-semibold text-slate-700 uppercase tracking-wider">Security Protection Active</div>
+            <div class="text-slate-600">Password authentication secured via standard PBKDF2 hashing algorithm. Real-time transaction risk scoring enabled.</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const user = await apiCall('/auth/profile/');
+        if (user) {
+            const displayName = user.full_name || user.username || 'User';
+            const initial = displayName.charAt(0).toUpperCase();
+
+            const avatarEl = document.getElementById('profile-avatar');
+            const fullNameEl = document.getElementById('profile-full-name');
+            const usernameEl = document.getElementById('profile-username');
+            const displayFullnameEl = document.getElementById('profile-display-fullname');
+            const displayUsernameEl = document.getElementById('profile-display-username');
+            const emailEl = document.getElementById('profile-email');
+            const phoneEl = document.getElementById('profile-phone');
+            const roleBadgeEl = document.getElementById('profile-role-badge');
+
+            if (avatarEl) avatarEl.textContent = initial;
+            if (fullNameEl) fullNameEl.textContent = displayName;
+            if (usernameEl) usernameEl.textContent = `@${user.username}`;
+            if (displayFullnameEl) displayFullnameEl.textContent = user.full_name || 'Not specified';
+            if (displayUsernameEl) displayUsernameEl.textContent = user.username;
+            if (emailEl) emailEl.textContent = user.email || 'Not specified';
+            if (phoneEl) phoneEl.textContent = user.phone_number || 'Not specified';
+            if (roleBadgeEl) {
+                if (user.role === 'ADMIN') {
+                    roleBadgeEl.textContent = 'Administrator';
+                    roleBadgeEl.className = 'inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200';
+                } else {
+                    roleBadgeEl.textContent = user.is_active ? 'Active Account' : 'Inactive Account';
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('Could not fetch user profile details:', err);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+
+{% block title %}Send Money (UPI) | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Simulated UPI Transfer</h1>
+            <p class="text-slate-500 text-xs mt-0.5">Initiate a payment transaction to evaluate real-time risk evaluation and policy enforcement.</p>
+        </div>
+        <div class="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-lg flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i> Sandbox Sandbox Mode
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Form Column -->
+        <div class="md:col-span-2 space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
+                    <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i> Beneficiary & Payment Details
+                </h3>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Select Beneficiary</label>
+                    <select id="send-beneficiary-select" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                        <option value="">-- Manual UPI Entry --</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Beneficiary Name</label>
+                        <input type="text" id="send-name" required value="Rahul Sharma" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">UPI ID</label>
+                        <input type="text" id="send-upi" required value="rahul@okicici" class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Transaction Amount (INR)</label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-2.5 text-slate-400 font-bold text-sm">₹</span>
+                        <input type="number" id="send-amount" required value="2500" class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3.5 py-2 text-base font-bold text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Transaction Type</label>
+                        <select id="send-tx-type" onchange="toggleCustomInput(this, 'send-tx-type-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="Online Merchant Payment" selected>Online Merchant Payment</option>
+                            <option value="Peer-to-Peer (P2P)">Peer-to-Peer (P2P)</option>
+                            <option value="POS Scan">POS Scan</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="UPI QR Code">UPI QR Code</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="send-tx-type-custom" placeholder="Type custom transaction type..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Merchant Category</label>
+                        <select id="send-merchant" onchange="toggleCustomInput(this, 'send-merchant-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="Retail Shop" selected>Retail Shop</option>
+                            <option value="Travel & Flight">Travel & Flight</option>
+                            <option value="Apparel & Clothing">Apparel & Clothing</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Services & Utilities">Services & Utilities</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="send-merchant-custom" placeholder="Type custom merchant category..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                </div>
+
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pt-2 pb-3">
+                    <i data-lucide="sliders" class="w-4 h-4 text-blue-600"></i> Environmental & Risk Indicators
+                </h3>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Device Type</label>
+                        <select id="send-device" onchange="toggleCustomInput(this, 'send-device-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="Mobile Device" selected>Mobile Device</option>
+                            <option value="Laptop Computer">Laptop Computer</option>
+                            <option value="Desktop Computer">Desktop Computer</option>
+                            <option value="Tablet Device">Tablet Device</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="send-device-custom" placeholder="Type custom device type..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Location</label>
+                        <select id="send-location" onchange="toggleCustomInput(this, 'send-location-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="Mumbai (Home)" selected>Mumbai (Home)</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Bangalore">Bangalore</option>
+                            <option value="Hyderabad">Hyderabad</option>
+                            <option value="Sydney (International)">Sydney (International)</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="send-location-custom" placeholder="Type custom location..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">7d Avg Amount (₹)</label>
+                        <input type="number" id="send-avg-7d" value="850" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Failed Txns 7d</label>
+                        <input type="number" id="send-failed-7d" value="0" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Distance (km)</label>
+                        <input type="number" id="send-distance" value="4.5" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">IP Anomaly Flag</label>
+                        <select id="send-ip-flag" onchange="toggleCustomInput(this, 'send-ip-flag-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="0" selected>0 (Clean IP)</option>
+                            <option value="1">1 (Suspicious IP)</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="send-ip-flag-custom" placeholder="Type 0 or 1 or custom flag..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Previous Flagged Activity</label>
+                        <select id="send-prev-fraud" onchange="toggleCustomInput(this, 'send-prev-fraud-custom')" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                            <option value="0" selected>0 (No Prior Flags)</option>
+                            <option value="1">1 (Past Flag Recorded)</option>
+                            <option value="CUSTOM">+ Enter Custom Value...</option>
+                        </select>
+                        <input type="text" id="send-prev-fraud-custom" placeholder="Type 0 or 1 or custom history..." class="hidden mt-2 w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-4 flex flex-col sm:flex-row gap-3">
+                    <button type="button" id="send-analyze-btn" class="flex-1 py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm rounded-lg border border-slate-300 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4 text-blue-600"></i> Evaluate Risk Level
+                    </button>
+                    <button type="button" id="send-confirm-btn" class="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4"></i> Execute Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Column -->
+        <div class="space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4 sticky top-24">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="activity" class="w-4 h-4 text-blue-600"></i> Real-Time Risk Preview
+                </h3>
+
+                <div id="preview-panel" class="space-y-4">
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 text-center space-y-1.5">
+                        <div class="text-xs text-slate-500 font-medium">Risk Assessment Score</div>
+                        <div class="text-3xl font-extrabold text-slate-900" id="preview-score">-- / 100</div>
+                        <div id="preview-badge" class="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-200 text-slate-600">Not Evaluated</div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-xs text-slate-600">
+                            <span>Policy Recommendation</span>
+                            <span id="preview-action" class="font-semibold text-slate-900">Awaiting Input</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div id="preview-bar" class="bg-slate-400 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-slate-200">
+                        <div class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Identified Risk Factors</div>
+                        <ul id="preview-factors" class="text-xs text-slate-600 space-y-1 pl-4 list-disc">
+                            <li class="text-slate-500">Click "Evaluate Risk Level" to preview risk assessment before proceeding.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function initSendMoney() {
+    try {
+        const beneficiaries = await apiCall('/beneficiaries/');
+        const benList = beneficiaries.results || beneficiaries;
+        const select = document.getElementById('send-beneficiary-select');
+        if (select && benList.length > 0) {
+            benList.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                opt.textContent = `${b.beneficiary_name} (${b.upi_id})`;
+                opt.dataset.name = b.beneficiary_name;
+                opt.dataset.upi = b.upi_id;
+                select.appendChild(opt);
+            });
+
+            select.addEventListener('change', () => {
+                const selectedOpt = select.options[select.selectedIndex];
+                if (selectedOpt.value) {
+                    document.getElementById('send-name').value = selectedOpt.dataset.name;
+                    document.getElementById('send-upi').value = selectedOpt.dataset.upi;
+                }
+            });
+        }
+    } catch (e) {
+        console.warn("Beneficiary list error:", e);
+    }
+}
+
+function toggleCustomInput(selectEl, customInputId) {
+    const customInput = document.getElementById(customInputId);
+    if (!customInput) return;
+    if (selectEl.value === 'CUSTOM') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+    } else {
+        customInput.classList.add('hidden');
+        customInput.value = '';
+    }
+}
+
+function getFieldValue(selectId, customInputId) {
+    const selectEl = document.getElementById(selectId);
+    const customEl = document.getElementById(customInputId);
+    if (selectEl && selectEl.value === 'CUSTOM' && customEl && customEl.value.trim() !== '') {
+        return customEl.value.trim();
+    }
+    return selectEl ? selectEl.value : '';
+}
+
+const getFormData = () => {
+    const rawIp = getFieldValue('send-ip-flag', 'send-ip-flag-custom');
+    const rawPrev = getFieldValue('send-prev-fraud', 'send-prev-fraud-custom');
+    const ipFlag = (rawIp.includes('1') || rawIp.toLowerCase().includes('suspicious') || rawIp.toLowerCase().includes('proxy') || rawIp.toLowerCase().includes('vpn')) ? 1 : 0;
+    const prevFraud = (rawPrev.includes('1') || rawPrev.toLowerCase().includes('past') || rawPrev.toLowerCase().includes('flag') || rawPrev.toLowerCase().includes('recorded')) ? 1 : 0;
+
+    return {
+        beneficiary_name: document.getElementById('send-name').value,
+        upi_id: document.getElementById('send-upi').value,
+        amount: parseFloat(document.getElementById('send-amount').value || '0'),
+        transaction_type: getFieldValue('send-tx-type', 'send-tx-type-custom'),
+        merchant_category: getFieldValue('send-merchant', 'send-merchant-custom'),
+        device_type: getFieldValue('send-device', 'send-device-custom'),
+        location: getFieldValue('send-location', 'send-location-custom'),
+        avg_transaction_amount_7d: parseFloat(document.getElementById('send-avg-7d').value || '500'),
+        failed_transaction_count_7d: parseInt(document.getElementById('send-failed-7d').value || '0'),
+        transaction_distance: parseFloat(document.getElementById('send-distance').value || '5'),
+        ip_address_flag: ipFlag,
+        previous_fraudulent_activity: prevFraud,
+    };
+};
+
+document.getElementById('send-analyze-btn')?.addEventListener('click', async () => {
+    const data = getFormData();
+    try {
+        const res = await apiCall('/fraud/predict/', 'POST', data);
+        document.getElementById('preview-score').textContent = `${res.risk_score} / 100`;
+        const badge = document.getElementById('preview-badge');
+        const action = document.getElementById('preview-action');
+        const bar = document.getElementById('preview-bar');
+        const factors = document.getElementById('preview-factors');
+
+        badge.textContent = `${res.risk_level} Risk`;
+        action.textContent = res.recommended_action;
+        bar.style.width = `${Math.min(100, res.risk_score)}%`;
+
+        if (res.risk_level === 'Low') {
+            badge.className = 'inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold risk-badge-low';
+            action.className = 'font-bold text-emerald-700';
+            bar.className = 'bg-emerald-600 h-full rounded-full transition-all duration-300';
+        } else if (res.risk_level === 'Medium') {
+            badge.className = 'inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold risk-badge-medium';
+            action.className = 'font-bold text-amber-700';
+            bar.className = 'bg-amber-600 h-full rounded-full transition-all duration-300';
+        } else {
+            badge.className = 'inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold risk-badge-high';
+            action.className = 'font-bold text-rose-700';
+            bar.className = 'bg-rose-600 h-full rounded-full transition-all duration-300';
+        }
+
+        factors.innerHTML = res.risk_factors.map(f => `<li>${f}</li>`).join('');
+        showToast(`Risk evaluation completed: ${res.risk_level} Risk`, 'info');
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+});
+
+document.getElementById('send-confirm-btn')?.addEventListener('click', async () => {
+    const data = getFormData();
+    try {
+        const txnRes = await apiCall('/transactions/', 'POST', data);
+        
+        if (txnRes.status === 'APPROVED') {
+            showToast(`Transaction ${txnRes.transaction_id} Approved!`, 'success', 'Payment Successful');
+            window.location.href = `/transactions/${txnRes.id}/`;
+        } else if (txnRes.status === 'OTP_REQUIRED') {
+            showModal({
+                title: 'Medium Risk - OTP Verification Required',
+                bodyHTML: `
+                    <div class="space-y-4">
+                        <p class="text-sm text-slate-700">
+                            This transaction has been flagged as <strong>Medium Risk</strong> (Score: ${txnRes.fraud_detection?.risk_score}/100).
+                            A 6-digit OTP code is required to authorize completion.
+                        </p>
+                        <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 flex items-center justify-between">
+                            <span>Sandbox OTP Prompt:</span>
+                            <span class="font-mono font-bold text-amber-700 text-sm">123456</span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Enter 6-Digit OTP Code</label>
+                            <input type="text" id="otp-modal-input" maxlength="6" value="123456" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-center text-xl font-mono tracking-widest text-slate-900 focus:border-blue-600 focus:outline-none">
+                        </div>
+                    </div>
+                `,
+                primaryText: 'Verify & Authorize Payment',
+                onPrimary: async () => {
+                    const otpVal = document.getElementById('otp-modal-input').value;
+                    try {
+                        await apiCall('/otp/verify/', 'POST', {
+                            transaction_id: txnRes.transaction_id,
+                            otp_code: otpVal
+                        });
+                        showToast('OTP verified successfully! Transaction approved.', 'success');
+                        window.location.href = `/transactions/${txnRes.id}/`;
+                        return true;
+                    } catch (err) {
+                        showToast(err.message || 'Invalid OTP code', 'error');
+                        return false;
+                    }
+                }
+            });
+        } else if (txnRes.status === 'BLOCKED') {
+            showModal({
+                title: 'Transaction Blocked - High Risk Detected',
+                bodyHTML: `
+                    <div class="space-y-4">
+                        <div class="p-4 bg-rose-50 border border-rose-200 rounded-lg space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-rose-700 uppercase tracking-wider">High Risk Alert</span>
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-bold risk-badge-high">${txnRes.fraud_detection?.risk_score}/100</span>
+                            </div>
+                            <div class="text-sm font-semibold text-slate-900">Transaction ${txnRes.transaction_id} was automatically blocked by security policy.</div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="text-xs font-semibold text-slate-700">Triggered Risk Indicators:</div>
+                            <ul class="text-xs text-slate-600 space-y-1 pl-4 list-disc">
+                                ${(txnRes.risk_analysis?.risk_factors || []).map(f => `<li>${f}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `,
+                primaryText: 'View Transaction Details',
+                onPrimary: () => {
+                    window.location.href = `/transactions/${txnRes.id}/`;
+                },
+                secondaryText: 'Close'
+            });
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+});
+
+initSendMoney();
+</script>
+{% endblock %}

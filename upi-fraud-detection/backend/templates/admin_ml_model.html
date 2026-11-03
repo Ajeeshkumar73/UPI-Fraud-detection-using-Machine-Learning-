@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Risk Engine Operations | UPIGuard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold uppercase tracking-wider mb-1">
+                <i data-lucide="cpu" class="w-3.5 h-3.5 text-blue-600"></i> Risk Analytics Engine
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Risk Engine Performance Dashboard</h1>
+            <p class="text-slate-500 text-xs mt-0.5">Dataset metrics, model evaluation comparison, feature importances, and ROC curve plots.</p>
+        </div>
+    </div>
+
+    <!-- Dataset Information Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Dataset Name</div>
+            <div class="text-sm font-bold text-slate-900 truncate" id="ds-name">synthetic_fraud_dataset.csv</div>
+            <div class="text-[11px] text-slate-500">Source: Transaction Baseline</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-blue-700">Total Records</div>
+            <div class="text-2xl font-bold text-blue-700" id="ds-total">50,000</div>
+            <div class="text-[11px] text-slate-500">21 Transaction Features</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-rose-700">Fraud Label Count</div>
+            <div class="text-2xl font-bold text-rose-700" id="ds-fraud">16,067 (32.13%)</div>
+            <div class="text-[11px] text-slate-500">Target: Fraud_Label</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-1">
+            <div class="text-xs font-semibold uppercase tracking-wider text-emerald-700">Genuine Count</div>
+            <div class="text-2xl font-bold text-emerald-700" id="ds-genuine">33,933 (67.87%)</div>
+            <div class="text-[11px] text-slate-500">Binary Target (0/1)</div>
+        </div>
+    </div>
+
+    <!-- Model Comparison Table -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="layers" class="w-4 h-4 text-blue-600"></i> Model Evaluation Matrix
+            </h3>
+            <span id="selected-model-badge" class="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold rounded-md">
+                Selected Model: Random Forest
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-700">
+                <thead class="text-xs uppercase bg-slate-50 text-slate-600 border-b border-slate-200">
+                    <tr>
+                        <th class="py-3 px-4">Model Name</th>
+                        <th class="py-3 px-4">Accuracy</th>
+                        <th class="py-3 px-4">Precision</th>
+                        <th class="py-3 px-4">Recall</th>
+                        <th class="py-3 px-4">F1 Score</th>
+                        <th class="py-3 px-4">ROC-AUC</th>
+                        <th class="py-3 px-4">PR-AUC</th>
+                        <th class="py-3 px-4 text-right">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="model-comparison-body">
+                    <tr>
+                        <td colspan="8" class="py-6 text-center text-slate-500">Loading evaluation metrics...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Feature Importance Bar Chart -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+                <span>Feature Weight Ranking</span>
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-600"></i>
+            </h3>
+            <div class="relative h-72">
+                <canvas id="chartFeatureImportance"></canvas>
+            </div>
+        </div>
+
+        <!-- ROC Curve Line Chart -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center justify-between">
+                <span>ROC Performance Curve</span>
+                <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+            </h3>
+            <div class="relative h-72">
+                <canvas id="chartRocCurve"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadMlDashboard() {
+    try {
+        const metadata = await apiCall('/admin/model-performance/');
+
+        document.getElementById('ds-name').textContent = metadata.dataset_name;
+        document.getElementById('ds-total').textContent = metadata.total_records.toLocaleString();
+        document.getElementById('ds-fraud').textContent = `${metadata.fraud_count.toLocaleString()} (${metadata.fraud_percentage}%)`;
+        document.getElementById('ds-genuine').textContent = `${metadata.genuine_count.toLocaleString()}`;
+
+        const selBadge = document.getElementById('selected-model-badge');
+        if (selBadge) {
+            selBadge.textContent = `Selected Model: ${metadata.selected_model}`;
+        }
+
+        const tbody = document.getElementById('model-comparison-body');
+        if (tbody && metadata.model_comparison) {
+            tbody.innerHTML = Object.entries(metadata.model_comparison).map(([mName, m]) => {
+                const isSelected = mName === metadata.selected_model;
+                return `
+                    <tr class="border-b border-slate-100 ${isSelected ? 'bg-blue-50/50' : 'hover:bg-slate-50'} transition-colors">
+                        <td class="py-3 px-4 font-bold text-slate-900 flex items-center gap-2">
+                            ${mName}
+                            ${isSelected ? '<span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-semibold">SELECTED</span>' : ''}
+                        </td>
+                        <td class="py-3 px-4 font-mono text-slate-700">${m.accuracy}</td>
+                        <td class="py-3 px-4 font-mono text-slate-700">${m.precision}</td>
+                        <td class="py-3 px-4 font-mono text-slate-700">${m.recall}</td>
+                        <td class="py-3 px-4 font-mono font-bold text-blue-600">${m.f1}</td>
+                        <td class="py-3 px-4 font-mono text-slate-700">${m.roc_auc}</td>
+                        <td class="py-3 px-4 font-mono text-slate-700">${m.pr_auc}</td>
+                        <td class="py-3 px-4 text-right font-semibold ${isSelected ? 'text-emerald-700' : 'text-slate-400'}">
+                            ${isSelected ? 'Active Model' : 'Evaluated'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        const fiCtx = document.getElementById('chartFeatureImportance')?.getContext('2d');
+        if (fiCtx && metadata.feature_importance) {
+            const topFi = metadata.feature_importance.slice(0, 10);
+            new Chart(fiCtx, {
+                type: 'bar',
+                data: {
+                    labels: topFi.map(f => f.feature.replace('cat__', '').replace('num__', '')),
+                    datasets: [{
+                        label: 'Feature Weight',
+                        data: topFi.map(f => f.importance),
+                        backgroundColor: '#2563eb'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } },
+                        y: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        const bestMetrics = metadata.model_comparison[metadata.selected_model] || {};
+        const rocPoints = bestMetrics.roc_curve || [];
+        const rocCtx = document.getElementById('chartRocCurve')?.getContext('2d');
+        if (rocCtx && rocPoints.length > 0) {
+            new Chart(rocCtx, {
+                type: 'line',
+                data: {
+                    labels: rocPoints.map(p => p.fpr),
+                    datasets: [{
+                        label: 'TPR (Sensitivity)',
+                        data: rocPoints.map(p => p.tpr),
+                        borderColor: '#16a34a',
+                        borderWidth: 2,
+                        fill: false
+                    }, {
+                        label: 'Baseline (AUC=0.5)',
+                        data: rocPoints.map(p => p.fpr),
+                        borderColor: '#94a3b8',
+                        borderDash: [5, 5],
+                        borderWidth: 1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'False Positive Rate', color: '#64748b' }, ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } },
+                        y: { title: { display: true, text: 'True Positive Rate', color: '#64748b' }, ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } }
+                    },
+                    plugins: { legend: { labels: { color: '#334155' } } }
+                }
+            });
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+loadMlDashboard();
+</script>
+{% endblock %}
